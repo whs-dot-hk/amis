@@ -123,6 +123,7 @@ def register_image_if_not_exists(
     image_info: ImageInfo,
     snapshot_id: str,
     public: bool,
+    share: []str,
 ) -> str:
     """
     Register image if it doesn't exist yet
@@ -196,6 +197,13 @@ def register_image_if_not_exists(
             ImageId=image_id,
             Attribute="launchPermission",
             LaunchPermission={"Add": [{"Group": "all"}]},
+        )
+    for account_id in share:
+        logging.info(f"Share {image_id} to {account_id}")
+        ec2.modify_image_attribute(
+            ImageId=image_id,
+            Attribute="launchPermission",
+            LaunchPermission={"Add": [{"UserId": account_id}]},
         )
     return image_id
 
@@ -296,6 +304,7 @@ def upload_ami(
     prefix: str,
     run_id: str,
     public: bool,
+    share: []str,
 ) -> dict[str, str]:
     """
     Upload NixOS AMI to AWS and return the image ids for each region
@@ -317,7 +326,7 @@ def upload_ami(
     )
 
     image_id = register_image_if_not_exists(
-        ec2, image_name, image_info, snapshot_id, public
+        ec2, image_name, image_info, snapshot_id, public, share
     )
 
     regions = filter(
@@ -350,6 +359,7 @@ def main() -> None:
     parser.add_argument("--public", action="store_true")
     parser.add_argument("--prefix", help="Prefix to prepend to image name")
     parser.add_argument("--run-id", help="Run id to append to image name")
+    parser.add_argument("--share", action="append")
     args = parser.parse_args()
 
     level = logging.DEBUG if args.debug else logging.INFO
@@ -366,6 +376,7 @@ def main() -> None:
         args.prefix,
         args.run_id,
         args.public,
+        args.share,
     )
     print(json.dumps(image_ids))
 
