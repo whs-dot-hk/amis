@@ -9,6 +9,7 @@ import boto3.ec2.createtags
 import botocore
 import botocore.exceptions
 import datetime
+from typing import List
 
 from mypy_boto3_ec2.client import EC2Client
 from mypy_boto3_ec2.literals import BootModeValuesType
@@ -123,7 +124,7 @@ def register_image_if_not_exists(
     image_info: ImageInfo,
     snapshot_id: str,
     public: bool,
-    share: []str,
+    share: List[str],
 ) -> str:
     """
     Register image if it doesn't exist yet
@@ -304,7 +305,7 @@ def upload_ami(
     prefix: str,
     run_id: str,
     public: bool,
-    share: []str,
+    share: List[str],
 ) -> dict[str, str]:
     """
     Upload NixOS AMI to AWS and return the image ids for each region
