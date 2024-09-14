@@ -51,6 +51,7 @@ def import_snapshot_if_not_exist(
     image_name: str,
     image_file: Path,
     image_format: str,
+    share: List[str],
 ) -> str:
     """
     Import snapshot from S3 and wait for it to finish
@@ -115,6 +116,13 @@ def import_snapshot_if_not_exist(
             ],
         )
     s3.delete_object(Bucket=s3_bucket, Key=image_name)
+    for account_id in share:
+        logging.info(f"Share {snapshot_id} to {account_id}")
+        ec2.modify_snapshot_attribute(
+            SnapshotId=snapshot_id,
+            Attribute="createVolumePermission",
+            CreateVolumePermission={"Add": [{"UserId": account_id}]},
+        )
     return snapshot_id
 
 
@@ -323,7 +331,7 @@ def upload_ami(
 
     image_format = image_info.get("format") or "VHD"
     snapshot_id = import_snapshot_if_not_exist(
-        s3, ec2, s3_bucket, image_name, image_file, image_format
+        s3, ec2, s3_bucket, image_name, image_file, image_format, share
     )
 
     image_id = register_image_if_not_exists(
